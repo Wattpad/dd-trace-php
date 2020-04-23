@@ -65,5 +65,6 @@ final class CurlHeadersMap implements Propagator
     public function extract($carrier)
     {
         // This use case is not implemented as we haven't found any framework returning headers in curl style so far.
+        throw new \Exception("Not implemented");
     }
 }
