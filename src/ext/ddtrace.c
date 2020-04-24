@@ -136,6 +136,9 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_ddtrace_config_app_name, 0, 0, 0)
 ZEND_ARG_INFO(0, default_name)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_INFO_EX(arginfo_ddtrace_config_distributed_tracing_enabled, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
 ZEND_BEGIN_ARG_INFO_EX(arginfo_ddtrace_config_integration_enabled, 0, 0, 1)
 ZEND_ARG_INFO(0, integration_name)
 ZEND_END_ARG_INFO()
@@ -863,54 +866,19 @@ static PHP_FUNCTION(ddtrace_config_app_name) {
 #endif
 }
 
-static bool _dd_config_bool(zval *value, bool default_value) {
-    ddtrace_downcase_zval(value);
-
-    ddtrace_string subject = {
-        .ptr = Z_STRVAL_P(value),
-        .len = Z_STRLEN_P(value),
-    };
-
-    ddtrace_string str_1 = {
-        .ptr = "1",
-        .len = 1,
-    };
-    ddtrace_string str_true = {
-        .ptr = "true",
-        .len = sizeof("true") - 1,
-    };
-    if (ddtrace_string_equals(subject, str_1) || ddtrace_string_equals(subject, str_true)) {
-        return true;
-    }
-    ddtrace_string str_0 = {
-        .ptr = "0",
-        .len = 1,
-    };
-    ddtrace_string str_false = {
-        .ptr = "false",
-        .len = sizeof("false") - 1,
-    };
-    if (ddtrace_string_equals(subject, str_0) || ddtrace_string_equals(subject, str_false)) {
-        return false;
-    }
-    return default_value;
+static PHP_FUNCTION(ddtrace_config_distributed_tracing_enabled) {
+    PHP5_UNUSED(return_value_used, this_ptr, return_value_ptr, ht TSRMLS_CC);
+    PHP7_UNUSED(execute_data);
+    RETURN_BOOL(ddtrace_config_distributed_tracing_enabled())
 }
 
-static bool _dd_config_trace_enabled() {
-    char *value = getenv("DD_TRACE_ENABLED");
-    ddtrace_zppstrlen_t value_len;
-    if (value && (value_len = strlen(value))) {
-        zval item;
-#if PHP_VERSION_ID < 70000
-        ZVAL_STRINGL(&item, value, value_len, 1);
-#else
-        ZVAL_STRINGL(&item, value, value_len);
-#endif
-        bool result = _dd_config_bool(&item, true);
-        ddtrace_zval_ptr_dtor(&item);
-        return result;
+static bool _dd_config_trace_enabled(void) {
+    bool default_setting = true;
+    ddtrace_string value = ddtrace_string_cstring_ctor(getenv("DD_TRACE_ENABLED"));
+    if (value.len) {
+        return ddtrace_config_bool(value.ptr, value.len, default_setting);
     } else {
-        return true;
+        return default_setting;
     }
 }
 
@@ -922,11 +890,12 @@ static PHP_FUNCTION(ddtrace_config_trace_enabled) {
 
 // note: only call this if _dd_config_trace_enabled() returns true
 static bool _dd_config_integration_enabled(ddtrace_string integration) {
+    bool default_setting = true;
     ddtrace_string integrations_disabled = ddtrace_string_cstring_ctor(getenv("DD_INTEGRATIONS_DISABLED"));
     if (integrations_disabled.len && integration.len) {
         return !ddtrace_string_contains_in_csv(integrations_disabled, integration);
     }
-    return true;
+    return default_setting;
 }
 
 static PHP_FUNCTION(ddtrace_config_integration_enabled) {
@@ -1205,6 +1174,7 @@ static const zend_function_entry ddtrace_functions[] = {
     DDTRACE_FE(dd_untrace, NULL),
     DDTRACE_FE(dd_trace_compile_time_microseconds, arginfo_dd_trace_compile_time_microseconds),
     DDTRACE_FE(ddtrace_config_app_name, arginfo_ddtrace_config_app_name),
+    DDTRACE_FE(ddtrace_config_distributed_tracing_enabled, arginfo_ddtrace_config_distributed_tracing_enabled),
     DDTRACE_FE(ddtrace_config_integration_enabled, arginfo_ddtrace_config_integration_enabled),
     DDTRACE_FE(ddtrace_config_trace_enabled, arginfo_ddtrace_config_trace_enabled),
     DDTRACE_FE_END};

@@ -5,6 +5,9 @@
 
 #include "compatibility.h"
 
+bool ddtrace_config_bool(const char *value, size_t len, bool default_value);
+bool ddtrace_config_distributed_tracing_enabled(void);
+
 struct ddtrace_memoized_configuration_t;
 extern struct ddtrace_memoized_configuration_t ddtrace_memoized_configuration;
 

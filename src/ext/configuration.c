@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 
+#include "ddtrace_string.h"
 #include "env_config.h"
 
 struct ddtrace_memoized_configuration_t ddtrace_memoized_configuration = {
@@ -131,3 +132,48 @@ DD_CONFIGURATION
 #undef BOOL
 #undef INT
 #undef DOUBLE
+
+bool ddtrace_config_bool(const char* value, size_t len, bool default_value) {
+    ALLOCA_FLAG(use_heap)
+
+    ddtrace_string subject = {
+        .ptr = zend_str_tolower_copy(do_alloca(len + 1, use_heap), value, len),
+        .len = len,
+    };
+
+    ddtrace_string str_1 = {
+        .ptr = "1",
+        .len = 1,
+    };
+    ddtrace_string str_true = {
+        .ptr = "true",
+        .len = sizeof("true") - 1,
+    };
+    if (ddtrace_string_equals(subject, str_1) || ddtrace_string_equals(subject, str_true)) {
+        free_alloca(subject.ptr, use_heap);
+        return true;
+    }
+    ddtrace_string str_0 = {
+        .ptr = "0",
+        .len = 1,
+    };
+    ddtrace_string str_false = {
+        .ptr = "false",
+        .len = sizeof("false") - 1,
+    };
+    if (ddtrace_string_equals(subject, str_0) || ddtrace_string_equals(subject, str_false)) {
+        free_alloca(subject.ptr, use_heap);
+        return false;
+    }
+
+    free_alloca(subject.ptr, use_heap);
+    return default_value;
+}
+
+bool ddtrace_config_distributed_tracing_enabled(void) {
+    ddtrace_string distributed_tracing_enabled = ddtrace_string_cstring_ctor(getenv("DD_DISTRIBUTED_TRACING"));
+    if (distributed_tracing_enabled.len) {
+        return ddtrace_config_bool(distributed_tracing_enabled.ptr, distributed_tracing_enabled.len, true);
+    }
+    return true;
+}

@@ -1,8 +1,9 @@
 <?php
 
 // THE FOLLOWING FUNCTIONS ARE IMPLEMENTED AT THE C-level
-// \ddtrace_config_app_name()
-// \ddtrace_config_integration_enabled()
+// \ddtrace_config_app_name($default = NULL)
+// \ddtrace_config_distributed_tracing_enabled()
+// \ddtrace_config_integration_enabled($integration)
 // \ddtrace_config_trace_enabled()
 
 /**
@@ -163,16 +164,6 @@ function _ddtrace_config_associative_array($value, $default)
 function ddtrace_config_debug_enabled()
 {
     return \_ddtrace_config_bool(\getenv('DD_TRACE_DEBUG'), false);
-}
-
-/**
- * Whether or not distributed tracing is enabled globally.
- *
- * @return bool
- */
-function ddtrace_config_distributed_tracing_enabled()
-{
-    return \_ddtrace_config_bool(\getenv('DD_DISTRIBUTED_TRACING'), true);
 }
 
 /**

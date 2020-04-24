@@ -1,4 +1,6 @@
 parameters:
+	autoload_files:
+		- lib/function.php
 	excludes_analyse:
 		- src/DDTrace/Bootstrap.php
 		- src/DDTrace/Util/CodeTracer.php

@@ -1,7 +1,7 @@
 <?php
 
 // lib imports
-require_once __DIR__ . '/../lib/configuration.php';
+require __DIR__ . '/../lib/function.php';
 
 require __DIR__ . '/../src/DDTrace/Log/LoggingTrait.php';
 require __DIR__ . '/../src/DDTrace/Contracts/Tracer.php';
