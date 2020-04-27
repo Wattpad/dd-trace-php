@@ -133,14 +133,7 @@ DD_CONFIGURATION
 #undef INT
 #undef DOUBLE
 
-bool ddtrace_config_bool(const char* value, size_t len, bool default_value) {
-    ALLOCA_FLAG(use_heap)
-
-    ddtrace_string subject = {
-        .ptr = zend_str_tolower_copy(do_alloca(len + 1, use_heap), value, len),
-        .len = len,
-    };
-
+bool ddtrace_config_bool(ddtrace_string subject, bool default_value) {
     ddtrace_string str_1 = {
         .ptr = "1",
         .len = 1,
@@ -150,7 +143,6 @@ bool ddtrace_config_bool(const char* value, size_t len, bool default_value) {
         .len = sizeof("true") - 1,
     };
     if (ddtrace_string_equals(subject, str_1) || ddtrace_string_equals(subject, str_true)) {
-        free_alloca(subject.ptr, use_heap);
         return true;
     }
     ddtrace_string str_0 = {
@@ -162,18 +154,26 @@ bool ddtrace_config_bool(const char* value, size_t len, bool default_value) {
         .len = sizeof("false") - 1,
     };
     if (ddtrace_string_equals(subject, str_0) || ddtrace_string_equals(subject, str_false)) {
-        free_alloca(subject.ptr, use_heap);
         return false;
     }
-
-    free_alloca(subject.ptr, use_heap);
     return default_value;
 }
 
-bool ddtrace_config_distributed_tracing_enabled(void) {
-    ddtrace_string distributed_tracing_enabled = ddtrace_string_cstring_ctor(getenv("DD_DISTRIBUTED_TRACING"));
+bool ddtrace_config_distributed_tracing_enabled(TSRMLS_D) {
+    ddtrace_string distributed_tracing_enabled =
+        ddtrace_string_cstring_ctor(ddtrace_getenv(ZEND_STRL("DD_DISTRIBUTED_TRACING") TSRMLS_CC));
     if (distributed_tracing_enabled.len) {
-        return ddtrace_config_bool(distributed_tracing_enabled.ptr, distributed_tracing_enabled.len, true);
+        /* We need to lowercase the str for ddtrace_config_bool.
+         * We know it's already been duplicated by ddtrace_getenv, so we can
+         * lower it in-place.
+         */
+        zend_str_tolower(distributed_tracing_enabled.ptr, distributed_tracing_enabled.len);
+        bool result = ddtrace_config_bool(distributed_tracing_enabled, true);
+        efree(distributed_tracing_enabled.ptr);
+        return result;
+    }
+    if (distributed_tracing_enabled.ptr) {
+        efree(distributed_tracing_enabled.ptr);
     }
     return true;
 }

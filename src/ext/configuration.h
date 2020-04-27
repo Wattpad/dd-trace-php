@@ -4,9 +4,19 @@
 #include <stdbool.h>
 
 #include "compatibility.h"
+#include "ddtrace_string.h"
 
-bool ddtrace_config_bool(const char *value, size_t len, bool default_value);
-bool ddtrace_config_distributed_tracing_enabled(void);
+/**
+ * Returns true if `subject` matches "true" or "1".
+ * Returns false if `subject` matches "false" or "0".
+ * Returns `default_value` otherwise.
+ * @param subject An already lowercased string
+ * @param default_value
+ * @return
+ */
+bool ddtrace_config_bool(ddtrace_string subject, bool default_value);
+
+bool ddtrace_config_distributed_tracing_enabled(TSRMLS_D);
 
 struct ddtrace_memoized_configuration_t;
 extern struct ddtrace_memoized_configuration_t ddtrace_memoized_configuration;
