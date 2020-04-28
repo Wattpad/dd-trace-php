@@ -16,6 +16,7 @@
 #include <ext/standard/info.h>
 
 #include "auto_flush.h"
+#include "blacklist.h"
 #include "circuit_breaker.h"
 #include "clocks.h"
 #include "comms_php.h"
@@ -39,13 +40,13 @@
 #include "signals.h"
 #include "span.h"
 
+bool ddtrace_has_blacklisted_module;
+
 ZEND_DECLARE_MODULE_GLOBALS(ddtrace)
 
 PHP_INI_BEGIN()
 STD_PHP_INI_BOOLEAN("ddtrace.disable", "0", PHP_INI_SYSTEM, OnUpdateBool, disable, zend_ddtrace_globals,
                     ddtrace_globals)
-STD_PHP_INI_ENTRY("ddtrace.internal_blacklisted_modules_list", "ionCube Loader,newrelic,", PHP_INI_SYSTEM,
-                  OnUpdateString, internal_blacklisted_modules_list, zend_ddtrace_globals, ddtrace_globals)
 STD_PHP_INI_ENTRY("ddtrace.request_init_hook", "", PHP_INI_SYSTEM, OnUpdateString, request_init_hook,
                   zend_ddtrace_globals, ddtrace_globals)
 STD_PHP_INI_BOOLEAN("ddtrace.strict_mode", "0", PHP_INI_SYSTEM, OnUpdateBool, strict_mode, zend_ddtrace_globals,
@@ -56,6 +57,7 @@ static int ddtrace_startup(struct _zend_extension *extension) {
     PHP5_UNUSED(extension);
     PHP7_UNUSED(extension);
 
+    ddtrace_blacklist_startup();
     ddtrace_curl_handlers_startup();
     return SUCCESS;
 }
@@ -250,6 +252,10 @@ static PHP_MSHUTDOWN_FUNCTION(ddtrace) {
 static PHP_RINIT_FUNCTION(ddtrace) {
     UNUSED(module_number, type);
 
+    if (ddtrace_has_blacklisted_module == true) {
+        DDTRACE_G(disable) = 1;
+    }
+
     if (DDTRACE_G(disable)) {
         return SUCCESS;
     }
@@ -257,10 +263,6 @@ static PHP_RINIT_FUNCTION(ddtrace) {
     ddtrace_bgs_log_rinit(PG(error_log));
     ddtrace_dispatch_init(TSRMLS_C);
     DDTRACE_G(disable_in_current_request) = 0;
-
-    if (DDTRACE_G(internal_blacklisted_modules_list) && !dd_no_blacklisted_modules(TSRMLS_C)) {
-        return SUCCESS;
-    }
 
     // This allows us to hook the ZEND_HANDLE_EXCEPTION pseudo opcode
     ZEND_VM_SET_OPCODE_HANDLER(EG(exception_op));
