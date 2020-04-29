@@ -343,7 +343,7 @@ class CurlIntegrationTest extends IntegrationTestCase
 
     public function testDistributedTracingIsNotPropagatedIfDisabled()
     {
-        putenv('DD_DISTRIBUTED_TRACING=true');
+        putenv('DD_DISTRIBUTED_TRACING=false');
         $found = [];
 
         $this->isolateTracer(function () use (&$found) {
