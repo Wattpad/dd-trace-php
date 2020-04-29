@@ -30,6 +30,7 @@
 #include "dogstatsd_client.h"
 #include "engine_hooks.h"
 #include "handlers_curl.h"
+#include "handlers_pdo.h"
 #include "logging.h"
 #include "memory_limit.h"
 #include "random.h"
@@ -56,12 +57,15 @@ static int ddtrace_startup(struct _zend_extension *extension) {
     PHP7_UNUSED(extension);
 
     ddtrace_curl_handlers_startup();
+    ddtrace_pdo_handlers_startup();
     return SUCCESS;
 }
 
 static void ddtrace_shutdown(struct _zend_extension *extension) {
     PHP5_UNUSED(extension);
     PHP7_UNUSED(extension);
+
+    ddtrace_pdo_handlers_shutdown();
 }
 
 static void ddtrace_activate(void) {}
