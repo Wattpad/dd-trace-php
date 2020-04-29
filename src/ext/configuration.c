@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 
+#include "ddtrace_string.h"
 #include "env_config.h"
 
 struct ddtrace_memoized_configuration_t ddtrace_memoized_configuration = {
@@ -131,3 +132,48 @@ DD_CONFIGURATION
 #undef BOOL
 #undef INT
 #undef DOUBLE
+
+bool ddtrace_config_bool(ddtrace_string subject, bool default_value) {
+    ddtrace_string str_1 = {
+        .ptr = "1",
+        .len = 1,
+    };
+    ddtrace_string str_true = {
+        .ptr = "true",
+        .len = sizeof("true") - 1,
+    };
+    if (ddtrace_string_equals(subject, str_1) || ddtrace_string_equals(subject, str_true)) {
+        return true;
+    }
+    ddtrace_string str_0 = {
+        .ptr = "0",
+        .len = 1,
+    };
+    ddtrace_string str_false = {
+        .ptr = "false",
+        .len = sizeof("false") - 1,
+    };
+    if (ddtrace_string_equals(subject, str_0) || ddtrace_string_equals(subject, str_false)) {
+        return false;
+    }
+    return default_value;
+}
+
+bool ddtrace_config_distributed_tracing_enabled(TSRMLS_D) {
+    ddtrace_string distributed_tracing_enabled =
+        ddtrace_string_cstring_ctor(ddtrace_getenv(ZEND_STRL("DD_DISTRIBUTED_TRACING") TSRMLS_CC));
+    if (distributed_tracing_enabled.len) {
+        /* We need to lowercase the str for ddtrace_config_bool.
+         * We know it's already been duplicated by ddtrace_getenv, so we can
+         * lower it in-place.
+         */
+        zend_str_tolower(distributed_tracing_enabled.ptr, distributed_tracing_enabled.len);
+        bool result = ddtrace_config_bool(distributed_tracing_enabled, true);
+        efree(distributed_tracing_enabled.ptr);
+        return result;
+    }
+    if (distributed_tracing_enabled.ptr) {
+        efree(distributed_tracing_enabled.ptr);
+    }
+    return true;
+}

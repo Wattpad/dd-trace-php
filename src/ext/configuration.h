@@ -4,6 +4,19 @@
 #include <stdbool.h>
 
 #include "compatibility.h"
+#include "ddtrace_string.h"
+
+/**
+ * Returns true if `subject` matches "true" or "1".
+ * Returns false if `subject` matches "false" or "0".
+ * Returns `default_value` otherwise.
+ * @param subject An already lowercased string
+ * @param default_value
+ * @return
+ */
+bool ddtrace_config_bool(ddtrace_string subject, bool default_value);
+
+bool ddtrace_config_distributed_tracing_enabled(TSRMLS_D);
 
 struct ddtrace_memoized_configuration_t;
 extern struct ddtrace_memoized_configuration_t ddtrace_memoized_configuration;
@@ -58,6 +71,7 @@ void ddtrace_config_shutdown(void);
     INT(get_dd_trace_agent_connect_timeout, "DD_TRACE_AGENT_CONNECT_TIMEOUT", DD_TRACE_AGENT_CONNECT_TIMEOUT)        \
     INT(get_dd_trace_debug_prng_seed, "DD_TRACE_DEBUG_PRNG_SEED", -1)                                                \
     BOOL(get_dd_log_backtrace, "DD_LOG_BACKTRACE", false)                                                            \
+    BOOL(get_dd_trace_generate_root_span, "DD_TRACE_GENERATE_ROOT_SPAN", true)                                       \
     BOOL(get_dd_trace_sandbox_enabled, "DD_TRACE_SANDBOX_ENABLED", DD_TRACE_SANDBOX_ENABLED)                         \
     INT(get_dd_trace_spans_limit, "DD_TRACE_SPANS_LIMIT", 1000)                                                      \
     BOOL(get_dd_trace_send_traces_via_thread, "DD_TRACE_BETA_SEND_TRACES_VIA_THREAD", DD_TRACE_BGS_ENABLED,          \
